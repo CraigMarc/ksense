@@ -1,25 +1,38 @@
-
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 async function fetchPatients(page) {
-
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
     try {
         const response = await fetch('https://assessment.ksensetech.com/api/patients?page=' + page + '&limit=10', {
             method: 'GET',
-           
+
             headers: { "x-api-key": "ak_39bd770d4512eac929930ddb075c86536d7232a3151f70c9" }
 
         })
 
-        const forecastData = await response.json();
+        const patientData = await response.json();
+        console.log(response.status)
+        if (response.status == 500 || response.status == 502 || response.status == 503) {
+            fetchPatients(page)
+            return patientData
+        }
+        if (response.status === 429) {
+            // Calculate delay with exponential backoff
+            const delay = 15000;
+            console.log(`Rate limited. Retrying in ${delay}ms`);
+            await wait(delay);
+            fetchPatients(page)
+            return patientData
+        }
 
-       
-        return (forecastData)
+        console.log("*****************************")
+        return (patientData)
 
     }
     catch (error) {
         console.error("There has been a problem with your fetch operation:", error);
-        
+
     }
 }
 
@@ -27,46 +40,47 @@ async function fetchPatients(page) {
 
 async function getPatients() {
 
-let patientArray = []
-data1 = await fetchPatients(1)
-patientArray.push(data1)
-console.log(data1)
+    let pages = 0
+    let patientArray = []
+    data1 = await fetchPatients(1)
+   
+    //patientArray.push(data1)
 
-let pages = data1.pagination.totalPages
+    if (data1.error == 'Rate limit exceeded' || data1.error == 'Bad gateway' || data1.error == 'Internal server error' || data1.error == 'Service temporarily unavailable') {
+        //data1 = await fetchPatients(1)
+        getPatients()
+    }
+    else {
+        patientArray.push(data1)
+        pages = data1.pagination.totalPages
+    }
 
-for (let i=2; i <= pages; i++) {
-    let data2 = await fetchPatients(i)
-    patientArray.push(data2)
-}
+ console.log(pages)
+ console.log(data1)
+ console.log("pages")
+    
+
+    for (let i = 2; i <= pages; i++) {
+       
+        console.log(i)
+        console.log("*************")
+        let data2 = await fetchPatients(i)
+        if (data2.error == 'Rate limit exceeded' || data2.error == 'Bad gateway' || data2.error == 'Internal server error' || data2.error == 'Service temporarily unavailable') {
+            //data2 = await fetchPatients(i)
+            i--
+        }
+        else {
+            patientArray.push(data2)
+        }
+
+    }
     return patientArray
 }
 
 
-async function processData () {
+async function processData() {
     let patientList = await getPatients()
     console.log(patientList)
 }
 
 processData()
-
-/*
-function addPatient(data) {
-    patientArray.push(data)
-    pages = data.pagination.totalPages
-    console.log(pages)
-}
-
-
-async function getPatientList(data) {
-   
-console.log(await fetchPatients(1))
-    console.log(pages)
-    for (let i=2; i<=pages; i++) {
-        fetchPatients(i)
-    }
-
-
-}
-
-getPatientList()
-console.log(patientArray)*/
