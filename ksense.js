@@ -1,3 +1,4 @@
+/*
 let patientList = [
     {
         "data": [
@@ -566,11 +567,11 @@ let patientList = [
             "requestId": "iad1::cpw9z-1753387069188-60f69dfe0b8c"
         }
     }
-]
+]*/
 
 
 //const delay = ms => new Promise(res => setTimeout(res, ms));
-/*
+
 async function fetchPatients(page) {
     const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -640,7 +641,7 @@ async function getPatients() {
 
     }
     return patientArray
-}*/
+}
 
 function checkBloodPressure(currentPatient) {
 
@@ -714,8 +715,13 @@ function checkAge (currentPatient) {
 async function processData() {
 
     //unquote later *****************************************
-    /*
-    let patientList = await getPatients()*/
+    
+    let patientList = await getPatients()
+
+    let high_risk_patients = []
+    let fever_patients = []
+    let data_quality_issues = []
+
     let totalPages = patientList.length
     for (i = 0; i < totalPages; i++) {
         let totalPatients = patientList[i].data.length
@@ -727,9 +733,47 @@ async function processData() {
             let bpCheck = checkBloodPressure(currentPatient)
             let tempCheck = checkTemperature(currentPatient)
             let ageCheck = checkAge(currentPatient)
+            console.log(bpCheck)
+             console.log(tempCheck)
+              console.log(ageCheck)
+
+            let total_risk = bpCheck + tempCheck + ageCheck
+
+            if (bpCheck == null || tempCheck == null || ageCheck == null){
+                console.log("data quality")
+                data_quality_issues.push(currentPatient.patient_id)
+            }
+
+            if (tempCheck == 1 || tempCheck ==2) {
+                console.log("fever patient")
+                fever_patients.push(currentPatient.patient_id)
+            }
+
+            if (total_risk >= 4){
+                console.log("high risk")
+                high_risk_patients.push(currentPatient.patient_id)
+            }
+
+            
+
         }
     }
 
+    console.log(data_quality_issues)
+    console.log(fever_patients)
+    console.log(high_risk_patients)
+    let results = {
+    high_risk_patients: high_risk_patients,
+    fever_patients: fever_patients,
+    data_quality_issues: data_quality_issues
+  };
+
+  sendResults(results)
+
+}
+
+async function sendResults(results) {
+console.log(results)
 }
 
 processData()
