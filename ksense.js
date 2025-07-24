@@ -4,7 +4,7 @@ async function fetchPatients(page) {
     const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
     try {
-        const response = await fetch('https://assessment.ksensetech.com/api/patients?page=' + page + '&limit=10', {
+        const response = await fetch('https://assessment.ksensetech.com/api/patients?page=' + page + '&limit=20', {
             method: 'GET',
 
             headers: { "x-api-key": "ak_39bd770d4512eac929930ddb075c86536d7232a3151f70c9" }
@@ -15,19 +15,18 @@ async function fetchPatients(page) {
         console.log(response.status)
         if (response.status == 500 || response.status == 502 || response.status == 503) {
             fetchPatients(page)
-            return patientData
+            //return patientData
         }
         if (response.status === 429) {
             // Calculate delay with exponential backoff
-            const delay = 15000;
+            const delay = 20000;
             console.log(`Rate limited. Retrying in ${delay}ms`);
             await wait(delay);
             fetchPatients(page)
-            return patientData
+            //return patientData
         }
 
-        console.log("*****************************")
-        return (patientData)
+        return patientData
 
     }
     catch (error) {
@@ -43,8 +42,8 @@ async function getPatients() {
     let pages = 0
     let patientArray = []
     data1 = await fetchPatients(1)
-   
-    //patientArray.push(data1)
+
+    console.log(data1)
 
     if (data1.error == 'Rate limit exceeded' || data1.error == 'Bad gateway' || data1.error == 'Internal server error' || data1.error == 'Service temporarily unavailable') {
         //data1 = await fetchPatients(1)
@@ -55,18 +54,13 @@ async function getPatients() {
         pages = data1.pagination.totalPages
     }
 
- console.log(pages)
- console.log(data1)
- console.log("pages")
-    
 
     for (let i = 2; i <= pages; i++) {
-       
-        console.log(i)
-        console.log("*************")
+        console.log(i + "iter")
+        console.log(pages + "total pages")
         let data2 = await fetchPatients(i)
         if (data2.error == 'Rate limit exceeded' || data2.error == 'Bad gateway' || data2.error == 'Internal server error' || data2.error == 'Service temporarily unavailable') {
-            //data2 = await fetchPatients(i)
+            data2 = await fetchPatients(i)
             i--
         }
         else {
